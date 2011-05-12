@@ -216,12 +216,11 @@ public class PeakViewer
 	private void calcMsMode (int length, double minMass, double maxMass)
 	{
 		msModeVals = new double[length];
-		double max = 0;
+		double max = 0, antisigma = resolution * 2.0 * Math.sqrt (2.0 * Math.log (2));
 		for (int i = 0; i < peaks.size (); i++)
 		{
 			Isotope p = peaks.elementAt (i);
-			double fwhm = p.mass / resolution;
-			double sigma = fwhm / (2.0 * Math.sqrt (2.0 * Math.log (2)));
+			double sigma = p.mass / antisigma;
 			for (double x = 0; x < length; x++)
 			{
 				double mass = x * (maxMass - minMass) / length + minMass;

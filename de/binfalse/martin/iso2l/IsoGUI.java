@@ -19,6 +19,9 @@ import de.binfalse.martin.iso2l.objects.PeakViewer;
 /**
  * The Class IsoGUI.
  * 
+ * TODO: charge states
+ * TODO: MS mode table
+ * 
  * @author Martin Scharm
  *         visit http://binfalse.de
  */
@@ -504,8 +507,9 @@ public class IsoGUI
 		
 		jTextFieldResolution.setText ("8000");
 		jTextFieldResolution.setHorizontalAlignment (JTextField.RIGHT);
+		jTextFieldResolution.setToolTipText ("Resolution as FWHM");
 		jCheckBoxMS.setToolTipText ("Enable Mass-Spec mode");
-		jCheckBoxMS.setText ("MS mode, resoltion: ");
+		jCheckBoxMS.setText ("MS mode, resolution:");
 		jCheckBoxMS.addActionListener (new java.awt.event.ActionListener ()
 		{
 			
@@ -753,7 +757,7 @@ public class IsoGUI
 																												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 																										.addComponent (
 																												jTextFieldResolution,
-																												20, 45, 45))
+																												20, 40, 40))
 																						.addGroup (
 																								layout
 																										.createSequentialGroup ()
