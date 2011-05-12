@@ -9,7 +9,6 @@ import java.util.Vector;
 import javax.swing.JFileChooser;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
-import javax.swing.table.TableModel;
 
 import de.binfalse.martin.iso2l.objects.Isotope;
 import de.binfalse.martin.iso2l.objects.Link;
@@ -18,6 +17,8 @@ import de.binfalse.martin.iso2l.objects.PeakViewer;
 
 
 /**
+ * The Class IsoGUI.
+ * 
  * @author Martin Scharm
  *         visit http://binfalse.de
  */
@@ -25,14 +26,31 @@ public class IsoGUI
 		extends javax.swing.JFrame
 {
 	
+	/** The Constant serialVersionUID. */
 	private static final long	serialVersionUID	= 1L;
+	
+	/** The operator. */
 	private Operator					op;
+	
+	/** num form. */
 	private NumberFormat			numForm;
+	
+	/** The vec of peaks. */
 	private Vector<Isotope>		peaks;
+	
+	/**
+	 * The vec of peaks to present, we'll change this object without loosing
+	 * information about the real values...
+	 */
 	private Vector<Isotope>		presentingPeaks;
-	private double minAbundance;
+	
+	/** The min abundance. */
+	private double						minAbundance;
 	
 	
+	/**
+	 * Instantiates a new iso GUI.
+	 */
 	public IsoGUI ()
 	{
 		op = new Operator ();
@@ -44,20 +62,33 @@ public class IsoGUI
 	}
 	
 
+	/**
+	 * Change status.
+	 * 
+	 * @param status
+	 *          the status message to display
+	 */
 	public void changeStatus (String status)
 	{
-		this.jLabelStatus.setText ("Status: " + status);
+		this.jLabelStatus.setText ("<html>Status: " + status + "</html>");
 	}
 	
 
+	/**
+	 * Change status to default status.
+	 */
 	public void changeStatus ()
 	{
 		this.jLabelStatus.setText ("Status: Let's go!");
 	}
 	
 
+	/**
+	 * Save the graphics as PNG image.
+	 */
 	private void saveImage ()
 	{
+		// maybe add JPG or GIF or smth else..
 		JFileChooser fc = new JFileChooser (".");
 		String name = jTextFieldForm.getText ();
 		if (jTextFieldDispName.getText ().length () > 0)
@@ -99,20 +130,21 @@ public class IsoGUI
 			}
 			catch (Exception ex)
 			{
-				ex.printStackTrace ();
+				changeStatus ("Writing failed: <font color='red'>" + ex.getMessage ()
+						+ "</font>");
 			}
 			changeStatus ();
 		}
 		else
 		{
-			changeStatus ("Err aborted");
-			javax.swing.JOptionPane.showMessageDialog (this,
-					"Failed to write File!!", "Error",
-					javax.swing.JOptionPane.ERROR_MESSAGE);
+			changeStatus ("<font color='red'>exporting aborted</font>");
 		}
 	}
 	
 
+	/**
+	 * Copy table to clipboard.
+	 */
 	private void copyTable ()
 	{
 		String s = "";
@@ -129,6 +161,9 @@ public class IsoGUI
 	}
 	
 
+	/**
+	 * Calc the clusters, this is the method to start with..
+	 */
 	private void calc ()
 	{
 		presentingPeaks = null;
@@ -148,7 +183,7 @@ public class IsoGUI
 			return;
 		}
 		changeStatus ("calculating distribution");
-		if (!op.calcDistribution (op.isos/*, jCheckBoxStretcher.isSelected ()*/))
+		if (!op.calcDistribution (op.isos/* , jCheckBoxStretcher.isSelected () */))
 		{
 			changeStatus ("calculation failed!");
 			return;
@@ -165,6 +200,9 @@ public class IsoGUI
 	}
 	
 
+	/**
+	 * Draw about image.
+	 */
 	private void drawAbout ()
 	{
 		jPanelGraph.drawAbout ();
@@ -174,6 +212,9 @@ public class IsoGUI
 	}
 	
 
+	/**
+	 * sets the min abundance.
+	 */
 	private void setMinAbundance ()
 	{
 		String s = (String) javax.swing.JOptionPane.showInputDialog (this,
@@ -206,6 +247,9 @@ public class IsoGUI
 	}
 	
 
+	/**
+	 * Tell the viewer to draw a new image.
+	 */
 	private void drawImage ()
 	{
 		if (presentingPeaks == null)
@@ -217,16 +261,23 @@ public class IsoGUI
 			if (jCheckBoxDispName.isSelected ())
 			{
 				if (jTextFieldDispName.getText ().length () > 0)
-					jPanelGraph.setName (jTextFieldDispName.getText ());
+					jPanelGraph.setFormulaName (jTextFieldDispName.getText ());
 				else
-					jPanelGraph.setName (jTextFieldForm.getText ());
+					jPanelGraph.setFormulaName (jTextFieldForm.getText ());
 			}
 			else
-				jPanelGraph.setName (null);
+				jPanelGraph.setFormulaName (null);
+			
+			jPanelGraph.setMsMode (jCheckBoxMS.isSelected ());
+			
 			jPanelGraph.drawPeaks (presentingPeaks);
 		}
 	}
 	
+
+	/**
+	 * Post processing chain.
+	 */
 	private void postProcess ()
 	{
 		if (peaks == null)
@@ -235,23 +286,73 @@ public class IsoGUI
 		for (int i = 0; i < peaks.size (); i++)
 			presentingPeaks.add (peaks.elementAt (i).copy ());
 		
-		tryToStretch ();
-		round ();
-		filterAbundance ();
+		try
+		{
+			calcMS ();
+			tryToStretch ();
+			round ();
+			filterAbundance ();
+			fillTable ();
+			drawImage ();
+			changeStatus ();
+		}
+		catch (ProcessingException e)
+		{
+			changeStatus ("<font color='red'>" + e.getMessage () + "</font>");
+			drawImage ();
+		}
 		
-		drawImage ();
 	}
 	
+
+	/**
+	 * Tell the viewer to show mountains instead of peaks.
+	 * 
+	 * @throws ProcessingException
+	 *           the processing exception if something went wrong
+	 */
+	private void calcMS () throws ProcessingException
+	{
+		if (!jCheckBoxMS.isSelected ())
+			return;
+		
+		double res = -1;
+		try
+		{
+			res = Double.parseDouble (jTextFieldResolution.getText ());
+		}
+		catch (java.lang.NumberFormatException e)
+		{
+			throw new ProcessingException ("invalid value for resolution");
+		}
+		
+		if (res <= 0)
+			return;
+		
+		jPanelGraph.setMsRes (res);
+	}
+	
+
+	/**
+	 * Filter abundance.
+	 */
 	private void filterAbundance ()
 	{
-		for (int i = presentingPeaks.size () - 1; i >= 0 ; i--)
+		for (int i = presentingPeaks.size () - 1; i >= 0; i--)
 		{
 			if (presentingPeaks.elementAt (i).abundance < minAbundance)
 				presentingPeaks.remove (i);
 		}
 	}
 	
-	private void round ()
+
+	/**
+	 * round the values.
+	 * 
+	 * @throws ProcessingException
+	 *           the processing exception if something went wrong
+	 */
+	private void round () throws ProcessingException
 	{
 		double roundMass = -1;
 		double roundAbun = -1;
@@ -261,10 +362,9 @@ public class IsoGUI
 		}
 		catch (java.lang.NumberFormatException e)
 		{
-			javax.swing.JOptionPane.showMessageDialog (this, "Round value "
+			throw new ProcessingException ("Round value for abu. "
 					+ jTextFieldRoundAbun.getText ()
-					+ " is not numeric!\nTo suppress roundings leave it <= 0", "Ooops",
-					javax.swing.JOptionPane.ERROR_MESSAGE);
+					+ " is not numeric! To suppress roundings leave it <= 0");
 		}
 		try
 		{
@@ -272,10 +372,19 @@ public class IsoGUI
 		}
 		catch (java.lang.NumberFormatException e)
 		{
-			javax.swing.JOptionPane.showMessageDialog (this, "Round value "
+			throw new ProcessingException ("Round value for mass "
 					+ jTextFieldRoundMass.getText ()
-					+ " is not numeric!\nTo suppress roundings leave it <= 0", "Ooops",
-					javax.swing.JOptionPane.ERROR_MESSAGE);
+					+ " is not numeric! To suppress roundings leave it <= 0");
+		}
+		if (roundAbun > 1000000000)
+		{
+			throw new ProcessingException ("Round value for abu. "
+					+ jTextFieldRoundAbun.getText () + " should be &lt; 10<sup>9</sup>");
+		}
+		if (roundMass > 1000000000)
+		{
+			throw new ProcessingException ("Round value for mass "
+					+ jTextFieldRoundMass.getText () + " should be &lt; 10<sup>9</sup>");
 		}
 		
 		if (roundMass > 0 || roundAbun > 0)
@@ -284,42 +393,57 @@ public class IsoGUI
 			for (int i = 0; i < presentingPeaks.size (); i++)
 			{
 				if (roundMass > 0)
-					presentingPeaks.elementAt (i).mass = Math.round (presentingPeaks.elementAt (i).mass
+					presentingPeaks.elementAt (i).mass = Math.round (presentingPeaks
+							.elementAt (i).mass
 							* roundMass)
 							/ roundMass;
 				if (roundAbun > 0)
 				{
-					presentingPeaks.elementAt (i).abundance = Math
-							.round (presentingPeaks.elementAt (i).abundance * roundAbun)
+					presentingPeaks.elementAt (i).abundance = Math.round (presentingPeaks
+							.elementAt (i).abundance
+							* roundAbun)
 							/ roundAbun;
 					if (presentingPeaks.elementAt (i).abundance == 0)
 						presentingPeaks.remove (i--);
 				}
 			}
-			// did some masses fall together?
+			// some masses meeting?
 			if (roundMass > 0)
 				for (int i = 0; i < presentingPeaks.size (); i++)
 					for (int j = i + 1; j < presentingPeaks.size (); j++)
-						if (presentingPeaks.elementAt (i).mass == presentingPeaks.elementAt (j).mass)
+						if (presentingPeaks.elementAt (i).mass == presentingPeaks
+								.elementAt (j).mass)
 						{
-							presentingPeaks.elementAt (i).abundance += presentingPeaks.elementAt (j).abundance;
+							presentingPeaks.elementAt (i).abundance += presentingPeaks
+									.elementAt (j).abundance;
 							presentingPeaks.remove (j--);
 						}
 		}
 		
-		changeStatus ("drawing image and filling table");
+	}
+	
+
+	/**
+	 * Fill table with isotopes.
+	 */
+	private void fillTable ()
+	{
 		String[][] model = new String[presentingPeaks.size ()][2];
 		for (int i = 0; i < presentingPeaks.size (); i++)
 		{
 			model[i][0] = "" + numForm.format (presentingPeaks.elementAt (i).mass);
-			model[i][1] = "" + numForm.format (presentingPeaks.elementAt (i).abundance);
+			model[i][1] = ""
+					+ numForm.format (presentingPeaks.elementAt (i).abundance);
 		}
 		jTableIsos.setModel (new javax.swing.table.DefaultTableModel (model,
 				new String[] { "Mass", "Abundance" }));
 		
-		changeStatus ();
 	}
+	
 
+	/**
+	 * stretch the peaks if the user checked the box.
+	 */
 	private void tryToStretch ()
 	{
 		if (presentingPeaks == null || !jCheckBoxStretcher.isSelected ())
@@ -338,13 +462,17 @@ public class IsoGUI
 		for (int i = 0; i < presentingPeaks.size (); i++)
 		{
 			model[i][0] = "" + numForm.format (presentingPeaks.elementAt (i).mass);
-			model[i][1] = "" + numForm.format (presentingPeaks.elementAt (i).abundance);
+			model[i][1] = ""
+					+ numForm.format (presentingPeaks.elementAt (i).abundance);
 		}
 		jTableIsos.setModel (new javax.swing.table.DefaultTableModel (model,
 				new String[] { "Mass", "Abundance" }));
 	}
 	
 
+	/**
+	 * init the window.
+	 */
 	private void init ()
 	{
 		this.setLocation (100, 100);
@@ -371,6 +499,21 @@ public class IsoGUI
 		jTextFieldRoundAbun = new javax.swing.JTextField ();
 		jSeparatorStatus = new javax.swing.JSeparator ();
 		jLabelStatus = new javax.swing.JLabel ();
+		jCheckBoxMS = new javax.swing.JCheckBox ();
+		jTextFieldResolution = new javax.swing.JTextField ();
+		
+		jTextFieldResolution.setText ("8000");
+		jTextFieldResolution.setHorizontalAlignment (JTextField.RIGHT);
+		jCheckBoxMS.setToolTipText ("Enable Mass-Spec mode");
+		jCheckBoxMS.setText ("MS mode, resoltion: ");
+		jCheckBoxMS.addActionListener (new java.awt.event.ActionListener ()
+		{
+			
+			public void actionPerformed (java.awt.event.ActionEvent evt)
+			{
+				postProcess ();
+			}
+		});
 		
 		setDefaultCloseOperation (javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		
@@ -439,6 +582,7 @@ public class IsoGUI
 		});
 		
 		jCheckBoxStretcher.setText ("Stretch peaks");
+		jCheckBoxStretcher.setToolTipText ("Scale peaks to 100%");
 		jCheckBoxStretcher.addActionListener (new java.awt.event.ActionListener ()
 		{
 			
@@ -449,6 +593,8 @@ public class IsoGUI
 		});
 		
 		jCheckBoxDispName.setText ("Display Name");
+		jCheckBoxDispName
+				.setToolTipText ("Write a name of this cluster to the pic");
 		jCheckBoxDispName.addActionListener (new java.awt.event.ActionListener ()
 		{
 			
@@ -459,6 +605,8 @@ public class IsoGUI
 		});
 		
 		jLabelDispName.setText ("Name:");
+		jLabelDispName
+				.setToolTipText ("Provide an alternative name of this cluster");
 		
 		jTextFieldDispName.getDocument ().addDocumentListener (
 				new javax.swing.event.DocumentListener ()
@@ -524,15 +672,36 @@ public class IsoGUI
 				javax.swing.GroupLayout.Alignment.LEADING).addGap (0, 347,
 				Short.MAX_VALUE));
 		
-		// jCheckBoxRound.setText("Gaussianize");
+		javax.swing.event.DocumentListener docl = new javax.swing.event.DocumentListener ()
+		{
+			
+			public void changedUpdate (DocumentEvent arg0)
+			{
+				postProcess ();
+			}
+			
+
+			public void insertUpdate (DocumentEvent arg0)
+			{
+				postProcess ();
+			}
+			
+
+			public void removeUpdate (DocumentEvent arg0)
+			{
+				postProcess ();
+			}
+		};
 		
 		jLabelRoundMass.setText ("Round mass:");
 		jLabelRoundAbun.setText ("Round abun.:");
-		
 		jTextFieldRoundMass.setText ("10000000");
 		jTextFieldRoundAbun.setText ("10000000");
 		jTextFieldRoundMass.setHorizontalAlignment (JTextField.RIGHT);
 		jTextFieldRoundAbun.setHorizontalAlignment (JTextField.RIGHT);
+		jTextFieldRoundAbun.getDocument ().addDocumentListener (docl);
+		jTextFieldRoundMass.getDocument ().addDocumentListener (docl);
+		jTextFieldResolution.getDocument ().addDocumentListener (docl);
 		
 		jLabelStatus.setText ("Status:");
 		changeStatus ();
@@ -579,6 +748,15 @@ public class IsoGUI
 																						.addGroup (
 																								layout
 																										.createSequentialGroup ()
+																										.addComponent (jCheckBoxMS)
+																										.addPreferredGap (
+																												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																										.addComponent (
+																												jTextFieldResolution,
+																												20, 45, 45))
+																						.addGroup (
+																								layout
+																										.createSequentialGroup ()
 																										.addGap (21, 21, 21)
 																										.addComponent (
 																												jLabelDispName)
@@ -587,7 +765,7 @@ public class IsoGUI
 																										.addComponent (
 																												jTextFieldDispName,
 																												javax.swing.GroupLayout.DEFAULT_SIZE,
-																												75, Short.MAX_VALUE)))
+																												75, 140)))
 																		.addPreferredGap (
 																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 																		.addGroup (
@@ -611,13 +789,9 @@ public class IsoGUI
 																																		.createParallelGroup (
 																																				javax.swing.GroupLayout.Alignment.LEADING,
 																																				false)
-																																		// .addComponent(jCheckBoxRound)
 																																		.addGroup (
 																																				layout
 																																						.createSequentialGroup ()
-																																						// .addGap(21,
-																																						// 21,
-																																						// 21)
 																																						.addComponent (
 																																								jLabelRoundAbun)
 																																						.addPreferredGap (
@@ -630,9 +804,6 @@ public class IsoGUI
 																																		.addGroup (
 																																				layout
 																																						.createSequentialGroup ()
-																																						// .addGap(21,
-																																						// 21,
-																																						// 21)
 																																						.addComponent (
 																																								jLabelRoundMass)
 																																						.addPreferredGap (
@@ -648,8 +819,7 @@ public class IsoGUI
 																										.addComponent (
 																												jScrollPaneTableIsos,
 																												javax.swing.GroupLayout.PREFERRED_SIZE,
-																												235,
-																												javax.swing.GroupLayout.PREFERRED_SIZE)))
+																												235, Short.MAX_VALUE)))
 																		.addPreferredGap (
 																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 																		.addGroup (
@@ -681,7 +851,9 @@ public class IsoGUI
 																								Short.MAX_VALUE))
 																		.addContainerGap ()).addGroup (
 																layout.createSequentialGroup ().addComponent (
-																		jLabelStatus).addContainerGap (817,
+																		jLabelStatus,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
 																		Short.MAX_VALUE)))));
 		layout
 				.setVerticalGroup (layout
@@ -721,7 +893,6 @@ public class IsoGUI
 																												layout
 																														.createParallelGroup (
 																																javax.swing.GroupLayout.Alignment.BASELINE)
-																														// .addComponent(jCheckBoxRound)
 																														.addComponent (
 																																jLabelRoundAbun)
 																														.addComponent (
@@ -748,6 +919,19 @@ public class IsoGUI
 																																jLabelDispName)
 																														.addComponent (
 																																jTextFieldDispName,
+																																javax.swing.GroupLayout.PREFERRED_SIZE,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																javax.swing.GroupLayout.PREFERRED_SIZE))
+																										.addPreferredGap (
+																												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																										.addGroup (
+																												layout
+																														.createParallelGroup (
+																																javax.swing.GroupLayout.Alignment.BASELINE)
+																														.addComponent (
+																																jCheckBoxMS)
+																														.addComponent (
+																																jTextFieldResolution,
 																																javax.swing.GroupLayout.PREFERRED_SIZE,
 																																javax.swing.GroupLayout.DEFAULT_SIZE,
 																																javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -781,9 +965,37 @@ public class IsoGUI
 		pack ();
 	}
 	
-
 	/**
+	 * The ProcessingException.
+	 * 
+	 * used to take care of processing pathways
+	 */
+	private class ProcessingException
+			extends Exception
+	{
+		
+		/** ext stuff */
+		private static final long	serialVersionUID	= 1339810279736153946L;
+		
+		
+		/**
+		 * Instantiates a new processing exception.
+		 * 
+		 * @param message
+		 *          the error message
+		 */
+		public ProcessingException (String message)
+		{
+			super (message);
+		}
+	}
+	
+	
+	/**
+	 * The main method.
+	 * 
 	 * @param args
+	 *          the arguments
 	 */
 	public static void main (String[] args)
 	{
@@ -801,23 +1013,23 @@ public class IsoGUI
 	private javax.swing.JButton			jButtonCopy;
 	private javax.swing.JButton			jButtonInfo;
 	private javax.swing.JButton			jButtonSave;
-	private javax.swing.JLabel			jLabelMinAbu;
 	private javax.swing.JCheckBox		jCheckBoxDispName;
-	// private javax.swing.JCheckBox jCheckBoxRound;
-	// private javax.swing.JCheckBox jCheckBoxHighRes;
+	private javax.swing.JCheckBox		jCheckBoxMS;
 	private javax.swing.JCheckBox		jCheckBoxStretcher;
 	private javax.swing.JComboBox		jComboBoxTypeChooser;
 	private javax.swing.JLabel			jLabelDispName;
+	private javax.swing.JLabel			jLabelMinAbu;
 	private javax.swing.JLabel			jLabelRoundMass;
 	private javax.swing.JLabel			jLabelRoundAbun;
-	private Link										jLabelLink;
 	private javax.swing.JLabel			jLabelStatus;
-	private PeakViewer							jPanelGraph;
 	private javax.swing.JScrollPane	jScrollPaneTableIsos;
 	private javax.swing.JSeparator	jSeparatorStatus;
 	private javax.swing.JTable			jTableIsos;
 	private javax.swing.JTextField	jTextFieldDispName;
 	private javax.swing.JTextField	jTextFieldForm;
+	private javax.swing.JTextField	jTextFieldResolution;
 	private javax.swing.JTextField	jTextFieldRoundMass;
 	private javax.swing.JTextField	jTextFieldRoundAbun;
+	private Link										jLabelLink;
+	private PeakViewer							jPanelGraph;
 }

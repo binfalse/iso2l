@@ -4,52 +4,113 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.MouseEvent;
 
+
+
 /**
+ * The Link representation  of a JLabel.
+ * 
  * @author Martin Scharm
- * visit http://binfalse.de
+ *         visit http://binfalse.de
  */
-public class Link extends javax.swing.JLabel implements java.awt.event.MouseListener
+public class Link
+		extends javax.swing.JLabel
+		implements java.awt.event.MouseListener
 {
-	private static final long serialVersionUID = 1L;
-	private String url;
 	
+	/** ext stuff */
+	private static final long	serialVersionUID	= 1L;
+	
+	/** The url for the link. */
+	private String						url;
+	
+	
+	/**
+	 * Instantiates a new link.
+	 */
 	public Link ()
 	{
 		super ();
 		init ("");
 	}
 	
+
+	/**
+	 * Instantiates a new link.
+	 * 
+	 * @param image
+	 *          the icon
+	 */
 	public Link (javax.swing.Icon image)
 	{
 		super (image);
 		init ("");
 	}
 	
+
+	/**
+	 * Instantiates a new link.
+	 * 
+	 * @param image
+	 *          the icon
+	 * @param horizontalAlignment
+	 *          the horizontal alignment of the label
+	 */
 	public Link (javax.swing.Icon image, int horizontalAlignment)
 	{
 		super (image, horizontalAlignment);
 		init ("");
 	}
 	
+
+	/**
+	 * Instantiates a new link.
+	 * 
+	 * @param text
+	 *          the label text
+	 */
 	public Link (String text)
 	{
 		super (text);
 		init (text);
 	}
 	
+
+	/**
+	 * Instantiates a new link.
+	 * 
+	 * @param text
+	 *          the label text
+	 * @param icon
+	 *          the icon
+	 * @param horizontalAlignment
+	 *          the horizontal alignment of the label
+	 */
 	public Link (String text, javax.swing.Icon icon, int horizontalAlignment)
 	{
 		super (text, icon, horizontalAlignment);
 		init (text);
 	}
 	
-	
+
+	/**
+	 * Sets the URL.
+	 * 
+	 * @param url
+	 *          the new URL
+	 */
 	public void setURL (String url)
 	{
 		this.url = url;
 		this.setToolTipText ("Open " + url + " in your browser");
 	}
 	
+
+	/**
+	 * Initializes the Link.
+	 * 
+	 * @param url
+	 *          the URL
+	 */
 	private void init (String url)
 	{
 		setURL (url);
@@ -57,32 +118,83 @@ public class Link extends javax.swing.JLabel implements java.awt.event.MouseList
 		this.setForeground (Color.BLUE);
 	}
 	
+
+	/**
+	 * Instantiates a new link.
+	 * 
+	 * @param text
+	 *          the label text
+	 * @param horizontalAlignment
+	 *          the horizontal alignment of the label
+	 */
 	public Link (String text, int horizontalAlignment)
 	{
 		super (text, horizontalAlignment);
 		init (text);
 	}
 	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
+	 */
 	@Override
 	public void mouseClicked (MouseEvent arg0)
 	{
 		browse ();
 	}
+	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+	 */
 	@Override
 	public void mouseEntered (MouseEvent arg0)
 	{
 		setCursor (new Cursor (Cursor.HAND_CURSOR));
 	}
+	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
+	 */
 	@Override
 	public void mouseExited (MouseEvent arg0)
 	{
 		setCursor (new Cursor (Cursor.DEFAULT_CURSOR));
 	}
-	@Override
-	public void mousePressed (MouseEvent arg0) {}
-	@Override
-	public void mouseReleased (MouseEvent arg0) {}
 	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mousePressed (MouseEvent arg0)
+	{
+	}
+	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseReleased (MouseEvent arg0)
+	{
+	}
+	
+
+	/**
+	 * Browse to the link using a browser.
+	 */
 	private void browse ()
 	{
 		if (java.awt.Desktop.isDesktopSupported ())
@@ -106,23 +218,24 @@ public class Link extends javax.swing.JLabel implements java.awt.event.MouseList
 			}
 		}
 		
-		
-		String osName = System.getProperty("os.name");
+		String osName = System.getProperty ("os.name");
 		try
 		{
 			if (osName.startsWith ("Windows"))
 			{
-				Runtime.getRuntime ().exec ("rundll32 url.dll,FileProtocolHandler " + url);
+				Runtime.getRuntime ().exec (
+						"rundll32 url.dll,FileProtocolHandler " + url);
 			}
 			else if (osName.startsWith ("Mac OS"))
 			{
-				Class fileMgr = Class.forName ("com.apple.eio.FileManager");
-				java.lang.reflect.Method openURL = fileMgr.getDeclaredMethod ("openURL", new Class[] {String.class});
-				openURL.invoke (null, new Object[] {url});
-			} 
+				Class<?> fileMgr = Class.forName ("com.apple.eio.FileManager");
+				java.lang.reflect.Method openURL = fileMgr.getDeclaredMethod (
+						"openURL", new Class[] { String.class });
+				openURL.invoke (null, new Object[] { url });
+			}
 			else
 			{
-				//check for $BROWSER
+				// check for $BROWSER
 				java.util.Map<String, String> env = System.getenv ();
 				if (env.get ("BROWSER") != null)
 				{
@@ -130,11 +243,13 @@ public class Link extends javax.swing.JLabel implements java.awt.event.MouseList
 					return;
 				}
 				
-				//check for common browsers
-				String[] browsers = { "firefox", "iceweasel", "chrome", "opera", "konqueror", "epiphany", "mozilla", "netscape" };
+				// check for common browsers
+				String[] browsers = { "firefox", "iceweasel", "chrome", "opera",
+						"konqueror", "epiphany", "mozilla", "netscape" };
 				String browser = null;
 				for (int count = 0; count < browsers.length && browser == null; count++)
-					if (Runtime.getRuntime ().exec (new String[] {"which", browsers[count]}).waitFor () == 0)
+					if (Runtime.getRuntime ().exec (
+							new String[] { "which", browsers[count] }).waitFor () == 0)
 					{
 						browser = browsers[count];
 						break;
@@ -142,12 +257,14 @@ public class Link extends javax.swing.JLabel implements java.awt.event.MouseList
 				if (browser == null)
 					throw new RuntimeException ("couldn't find any browser...");
 				else
-					Runtime.getRuntime ().exec (new String[] {browser, url});
+					Runtime.getRuntime ().exec (new String[] { browser, url });
 			}
 		}
 		catch (Exception e)
 		{
-			javax.swing.JOptionPane.showMessageDialog (null, "couldn't find a webbrowser to use...\nPlease browser for yourself:\n" + url);
+			javax.swing.JOptionPane.showMessageDialog (null,
+					"couldn't find a webbrowser to use...\nPlease browser for yourself:\n"
+							+ url);
 		}
 	}
 }

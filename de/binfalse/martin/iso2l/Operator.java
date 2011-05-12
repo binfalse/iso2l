@@ -17,7 +17,6 @@ import de.binfalse.martin.iso2l.objects.MolecularParser;
 
 
 
-// TODO: Auto-generated Javadoc
 /**
  * The Operator, brain of iso2l.
  * 
@@ -26,17 +25,17 @@ import de.binfalse.martin.iso2l.objects.MolecularParser;
 public class Operator
 {
 	
-	/** The composition map. */
+	/** The formula composition map. */
 	private HashMap<String, Integer>	compositionMap;
 	
 	/** The peak distribution. */
 	private HashMap<Double, Double>		peakDistribution;
 	
-	/** The isos. */
+	/** The isotopes. */
 	public Isotopes										isos;
 	
-	/** The prots. */
-	public AminoAcids									prots;
+	/** The amino acids. */
+	public AminoAcids									aas;
 	
 	/** The min abundance. */
 	public static double							minAbundance	= 0.000000001;
@@ -48,7 +47,7 @@ public class Operator
 	public Operator ()
 	{
 		isos = new Isotopes ();
-		prots = new AminoAcids ();
+		aas = new AminoAcids ();
 		peakDistribution = null;
 		compositionMap = null;
 	}
@@ -65,41 +64,43 @@ public class Operator
 	 *          the c
 	 * @return true, if successful
 	 */
-	public boolean parseFormular (String formular, int type, Component c)
+	public boolean parseFormular (String formula, int type, Component c)
 	{
 		// molecular
 		if (type == 1)
-			return parseFormular (formular);
+			return parseFormula (formula);
 		else if (type == 2)
 		{
 			// one letter code
-			formular = formularFromOneLetter (formular);
-			if (formular == null)
+			formula = formulaFromOneLetter (formula);
+			if (formula == null)
 				return false;
-			return parseFormular (formular);
+			// peps come w/o water
+			return parseFormula (formula + "H2O");
 		}
 		else if (type == 3)
 		{
-			// three leter code
-			formular = formularFromThreeLetter (formular);
-			if (formular == null)
+			// three letter code
+			formula = formulaFromThreeLetter (formula);
+			if (formula == null)
 				return false;
-			return parseFormular (formular);
+			// peps come w/o water
+			return parseFormula (formula + "H2O");
 		}
 		else
 		{
 			// detect
 			// if one of ()0123456789 -> molecular
-			if (stringContainsOneOf (formular, "()0123456789"))
-				return parseFormular (formular, 1, c);
+			if (stringContainsOneOf (formula, "()0123456789"))
+				return parseFormular (formula, 1, c);
 			// if two joint lowercase letters -> three letter code
-			Matcher m = Pattern.compile ("[a-z]{2}").matcher (formular);
+			Matcher m = Pattern.compile ("[a-z]{2}").matcher (formula);
 			if (m.find ())
-				return parseFormular (formular, 3, c);
+				return parseFormular (formula, 3, c);
 			// if not two joint lowercase letters but at least one lowercase in
 			// word -> molecular
-			if (!formular.toUpperCase ().equals (formular))
-				return parseFormular (formular, 1, c);
+			if (!formula.toUpperCase ().equals (formula))
+				return parseFormular (formula, 1, c);
 			// we have only upper case letters... but can't be sure... failed...
 			javax.swing.JOptionPane
 					.showMessageDialog (
@@ -112,13 +113,13 @@ public class Operator
 	
 
 	/**
-	 * String contains one of.
+	 * does a string contain one of ... ?
 	 * 
 	 * @param s
-	 *          the s
+	 *          the string
 	 * @param find
-	 *          the find
-	 * @return true, if successful
+	 *          the elements to find
+	 * @return true, if we found any element
 	 */
 	private boolean stringContainsOneOf (String s, String find)
 	{
@@ -130,75 +131,74 @@ public class Operator
 	
 
 	/**
-	 * Formular from one letter.
+	 * Formula from one letter code.
 	 * 
-	 * @param formular
-	 *          the formular
-	 * @return the string
+	 * @param formula
+	 *          the formula
+	 * @return the elemental string
 	 */
-	private String formularFromOneLetter (String formular)
+	private String formulaFromOneLetter (String formula)
 	{
 		String form = "";
-		HashMap<String, AminoAcid> ones = prots.getOneLetterMap ();
-		for (int i = 0; i < formular.length (); i++)
+		HashMap<String, AminoAcid> ones = aas.getOneLetterMap ();
+		for (int i = 0; i < formula.length (); i++)
 		{
-			if (ones.get ("" + formular.charAt (i)) == null)
+			if (ones.get ("" + formula.charAt (i)) == null)
 				return null;
-			form += ones.get ("" + formular.charAt (i)).formular;
+			form += ones.get ("" + formula.charAt (i)).formula;
 		}
 		return form;
 	}
 	
 
 	/**
-	 * Formular from three letter.
+	 * Formula from three letter code.
 	 * 
-	 * @param formular
-	 *          the formular
-	 * @return the string
+	 * @param formula
+	 *          the formula
+	 * @return the elemental string
 	 */
-	private String formularFromThreeLetter (String formular)
+	private String formulaFromThreeLetter (String formula)
 	{
-		if (formular.length () % 3 != 0)
+		if (formula.length () % 3 != 0)
 			return null;
 		String form = "";
-		HashMap<String, AminoAcid> threes = prots.getThreeLetterMap ();
-		for (int i = 0; i < formular.length (); i += 3)
+		HashMap<String, AminoAcid> threes = aas.getThreeLetterMap ();
+		for (int i = 0; i < formula.length (); i += 3)
 		{
-			if (threes.get (formular.substring (i, i + 3)) == null)
+			if (threes.get (formula.substring (i, i + 3)) == null)
 				return null;
-			form += threes.get (formular.substring (i, i + 3)).formular;
+			form += threes.get (formula.substring (i, i + 3)).formula;
 		}
 		return form;
 	}
 	
 
 	/**
-	 * Parses the formular.
+	 * Parses the formula.
 	 * 
 	 * @param formular
-	 *          the formular
+	 *          the formula
 	 * @return true, if successful
 	 */
-	private boolean parseFormular (String formular)
+	private boolean parseFormula (String formula)
 	{
 		MolecularParser mp = new MolecularParser ();
-		compositionMap = mp.praseFormular (formular, isos);
+		compositionMap = mp.parseFormula (formula, isos);
 		if (compositionMap != null && compositionMap.size () > 0)
 			return true;
 		return false;
 	}
 	
 
-	// steinscher algorithmus
 	/**
-	 * Gg t.
+	 * ggT via steinscher algorithmus
 	 * 
 	 * @param a
-	 *          the a
+	 *          first integer
 	 * @param b
-	 *          the b
-	 * @return the int
+	 *          second integer
+	 * @return greatest common divisor
 	 */
 	public int ggT (int a, int b)
 	{
@@ -234,12 +234,10 @@ public class Operator
 	
 
 	/**
-	 * Calc distribution.
+	 * Calc distribution of this composition map.
 	 * 
 	 * @param isos
-	 *          the isos
-	 * @param scale
-	 *          the scale
+	 *          the isotopes
 	 * @return true, if successful
 	 */
 	public boolean calcDistribution (Isotopes isos)
@@ -248,12 +246,12 @@ public class Operator
 			return false;
 		
 		peakDistribution = null;
-		boolean scaled = false;
 		
 		for (Map.Entry<String, Integer> entry : compositionMap.entrySet ())
 		{
 			Atom a = isos.getAtom (entry.getKey ());
 			int anz = entry.getValue ();
+			
 			HashMap<Double, Double> peaks = peaksOfAtom (anz, a);
 			
 			if (peakDistribution == null)
@@ -282,21 +280,6 @@ public class Operator
 				peakDistribution = allPeaksNew;
 			}
 			
-			/*double max = 0;
-			for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
-			{
-				if (e.getValue () > max)
-					max = e.getValue ();
-			}
-			if (max < 0.01) // scale it or we'll loose peaks
-			{
-				scaled = true;
-				for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
-				{
-					peakDistribution.put (e.getKey (), e.getValue () / max);
-				}
-			}*/
-			
 			// delete very small stuff
 			HashMap<Double, Double> allPeaksNew = new HashMap<Double, Double> ();
 			for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
@@ -309,57 +292,32 @@ public class Operator
 			peakDistribution = allPeaksNew;
 			
 		}
-		
-		/*double max = 0;
-		HashMap<Double, Double> allPeaksNew = new HashMap<Double, Double> ();
-		for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
-		{
-			if (Double.isInfinite (e.getValue ()) || Double.isNaN (e.getValue ()))
-				continue;
-			if (e.getValue () > minAbundance)
-			{
-				allPeaksNew.put (e.getKey (), e.getValue ());
-				if (e.getValue () > max)
-					max = e.getValue ();
-			}
-		}
-		peakDistribution = allPeaksNew;
-		// do we have to scale? if all peaks too small, or we scaled previously
-		// or if user wishes
-		if (max < 0.01)
-		{
-			for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
-			{
-				peakDistribution.put (e.getKey (), e.getValue () / max);
-			}
-		}*/
-		// TODO: stretching in main prog...
 		return true;
 	}
 	
 
 	/**
-	 * Peaks of atom.
+	 * Peaks of a single atom.
 	 * 
-	 * @param sum
+	 * @param num
 	 *          number of atoms
 	 * @param a
 	 *          the atom we are processing
 	 * @return the hash map of masses => abundances
 	 */
-	private HashMap<Double, Double> peaksOfAtom (int sum, Atom a)
+	private HashMap<Double, Double> peaksOfAtom (int num, Atom a)
 	{
-		return peaksOfAtom (new int[a.getIsotopes ().size ()], sum, 0, a);
+		return peaksOfAtom (new int[a.getIsotopes ().size ()], num, 0, a);
 	}
 	
 
 	/**
-	 * Peaks of atom.
+	 * Peaks of a single atom.
 	 * 
 	 * @param vec
 	 *          holds distribution of isotopes. |vec| = number of possible
 	 *          isotopes. Intended to be zero (new int [size]) on access..
-	 * @param sum
+	 * @param num
 	 *          number of atoms
 	 * @param element
 	 *          which element comes next
@@ -367,7 +325,7 @@ public class Operator
 	 *          the atom we are processing
 	 * @return the hash map of masses => abundances
 	 */
-	private HashMap<Double, Double> peaksOfAtom (int[] vec, int sum, int element,
+	private HashMap<Double, Double> peaksOfAtom (int[] vec, int num, int element,
 			Atom a)
 	{
 		if (vec.length > element)
@@ -378,11 +336,11 @@ public class Operator
 			if (element < vec.length - 1)
 			{
 				HashMap<Double, Double> map = new HashMap<Double, Double> ();
-				for (int i = sum - s; i >= 0; i--)
+				for (int i = num - s; i >= 0; i--)
 				{
 					int[] copy = (int[]) vec.clone ();
 					copy[element] = i;
-					HashMap<Double, Double> sub = peaksOfAtom (copy, sum, element + 1, a);
+					HashMap<Double, Double> sub = peaksOfAtom (copy, num, element + 1, a);
 					for (Map.Entry<Double, Double> entry : sub.entrySet ())
 					{
 						if (map.get (entry.getKey ()) != null)
@@ -396,8 +354,8 @@ public class Operator
 			}
 			else
 			{
-				vec[element] = sum - s;
-				return peaksOfAtom (vec, sum, element + 1, a);
+				vec[element] = num - s;
+				return peaksOfAtom (vec, num, element + 1, a);
 			}
 		}
 		else
@@ -415,11 +373,9 @@ public class Operator
 				abundance *= Math
 						.pow (a.getIsotopes ().elementAt (i).abundance, vec[i]);
 			}
-			binomial = factorial (sum).divide (binomial);
+			binomial = factorial (num).divide (binomial);
 			
 			abundance *= binomial.doubleValue ();
-			// if (binomial.doubleValue() - mult != 0)
-			// System.out.println(binomial.doubleValue() + " -vs- " + mult);
 			if (Double.isNaN (abundance) || Double.isInfinite (abundance))
 				return map;
 			
@@ -468,9 +424,6 @@ public class Operator
 		Vector<Isotope> peaks = new Vector<Isotope> ();
 		for (Map.Entry<Double, Double> e : peakDistribution.entrySet ())
 		{
-			/*peaks.add (new Isotope (
-					Math.round (e.getKey () * 10000000000.) / 10000000000., Math.round (e
-							.getValue () * 10000000000.) / 10000000000.));*/
 			peaks.add (new Isotope (e.getKey (), e.getValue ()));
 		}
 		for (int i = 0; i < peaks.size (); i++)
