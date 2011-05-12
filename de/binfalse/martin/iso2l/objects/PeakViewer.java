@@ -245,7 +245,8 @@ public class PeakViewer
 	 */
 	private void drawPeaks (Graphics2D g2)
 	{
-		
+		// TODO: zoom
+		// TODO: more labels at bottom
 		this.setBackground (Color.WHITE);
 		g2.setColor (Color.WHITE);
 		g2.fillRect (getX (), getY (), WIDTH, HEIGHT);
