@@ -7,12 +7,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Vector;
 
 
 
+// TODO: Auto-generated Javadoc
 /**
  * The Class PeakViewer.
  * 
@@ -21,32 +24,76 @@ import java.util.Vector;
  */
 public class PeakViewer
 		extends javax.swing.JPanel
-		implements ComponentListener
+		implements java.awt.event.ComponentListener, java.awt.event.MouseListener,
+		java.awt.event.MouseMotionListener
 {
 	
 	/** ext stuff. */
-	private static final long	serialVersionUID	= 1L;
+	private static final long				serialVersionUID	= 1L;
 	
 	/** The vector of peaks. */
-	private Vector<Isotope>		peaks;
-	
-	/** The min mass. */
-	private double						minMass;
-	
-	/** The max mass. */
-	private double						maxMass;
+	private Vector<Isotope>					peaks;
 	
 	/** name of formula. */
-	private String						formulaName;
+	private String									formulaName;
 	
 	/** array of peaks. */
-	private double[]					msModeVals;
+	private double[]								msModeVals;
 	
 	/** msmode enabled!?. */
-	private boolean						msmode;
+	private boolean									msmode;
 	
 	/** The resolution. */
-	private double						resolution;
+	private double									resolution;
+	
+	/** The min mass. */
+	private java.util.Stack<Double>	minMass;
+	
+	/** The max mass. */
+	private java.util.Stack<Double>	maxMass;
+	
+	/** The mouse position. */
+	private java.awt.Point					mouse;
+	
+	/** The init mouse position. */
+	private java.awt.Point					initMouse;
+	
+	/** The indicator whether to draw the mouse. */
+	private boolean									drawMouse;
+	
+	/** The indicator whether mouse moved. */
+	private boolean									mousemoved;
+	
+	/** The cursor. */
+	private java.awt.Cursor					cursor;
+	
+	/** The origin x. */
+	private double									originX;
+	
+	/** The origin y. */
+	private double									originY;
+	
+	/** The max x. */
+	private double									maxX;
+	
+	/** The max y. */
+	private double									maxY;
+	
+	/** The start x. */
+	private double									startX;
+	
+	/** The start y. */
+	private double									startY;
+	
+	/** The end x. */
+	private double									endX;
+	
+	/** The end y. */
+	private double									endY;
+	private boolean stretch;
+	
+	/** num form. */
+	//private NumberFormat			numForm;
 	
 	
 	/**
@@ -56,13 +103,32 @@ public class PeakViewer
 	{
 		super ();
 		peaks = null;
-		minMass = Double.POSITIVE_INFINITY;
-		maxMass = Double.NEGATIVE_INFINITY;
 		formulaName = null;
 		msmode = false;
 		msModeVals = null;
 		resolution = 8000;
+		minMass = null;
+		maxMass = null;
 		this.addComponentListener (this);
+		drawMouse = false;
+		mouse = null;
+		initMouse = null;
+		this.addMouseListener (this);
+		this.addMouseMotionListener (this);
+		mousemoved = false;
+		cursor = java.awt.Toolkit.getDefaultToolkit ().createCustomCursor (
+				new java.awt.image.BufferedImage (16, 16,
+						java.awt.image.BufferedImage.TYPE_INT_ARGB),
+				new java.awt.Point (0, 0), "blank cursor");
+		originX = 50;
+		originY = getHeight () - 50;
+		maxX = getWidth () - 20;
+		maxY = 20;
+		startX = originX + 10;
+		startY = originY;
+		endX = maxX - 10;
+		endY = maxY + 10;
+		stretch = false;
 	}
 	
 
@@ -121,8 +187,9 @@ public class PeakViewer
 	 * @param peaks
 	 *          the vector of peaks we should draw later on
 	 */
-	public void drawPeaks (Vector<Isotope> peaks)
+	public void drawPeaks (Vector<Isotope> peaks, boolean stretch)
 	{
+		this.stretch = stretch;
 		if (peaks.size () < 1)
 		{
 			peaks = null;
@@ -130,15 +197,20 @@ public class PeakViewer
 			return;
 		}
 		this.peaks = peaks;
-		minMass = Double.POSITIVE_INFINITY;
-		maxMass = Double.NEGATIVE_INFINITY;
+		minMass = new java.util.Stack<Double> ();
+		maxMass = new java.util.Stack<Double> ();
+		double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
 		for (int i = 0; i < peaks.size (); i++)
 		{
-			if (peaks.elementAt (i).mass < minMass)
-				minMass = peaks.elementAt (i).mass;
-			if (peaks.elementAt (i).mass > maxMass)
-				maxMass = peaks.elementAt (i).mass;
+			if (peaks.elementAt (i).mass < min)
+				min = peaks.elementAt (i).mass;
+			if (peaks.elementAt (i).mass > max)
+				max = peaks.elementAt (i).mass;
 		}
+		minMass.push (Math.floor ( (min - 2) / 3.) * 3.);
+		maxMass.push (Math.ceil ( (max + 2) / 3.) * 3.);
+		mousemoved = false;
+		initMouse = null;
 		this.repaint ();
 	}
 	
@@ -216,7 +288,8 @@ public class PeakViewer
 	private void calcMsMode (int length, double minMass, double maxMass)
 	{
 		msModeVals = new double[length];
-		double max = 0, antisigma = resolution * 2.0 * Math.sqrt (2.0 * Math.log (2));
+		double max = 0, antisigma = resolution * 2.0
+				* Math.sqrt (2.0 * Math.log (2));
 		for (int i = 0; i < peaks.size (); i++)
 		{
 			Isotope p = peaks.elementAt (i);
@@ -229,9 +302,83 @@ public class PeakViewer
 					max = msModeVals[(int) x];
 			}
 		}
+		System.out.println (Arrays.toString (msModeVals));
 		for (int x = 0; x < length; x++)
 		{
 			msModeVals[(int) x] /= max;
+		}
+	}
+	
+
+	/**
+	 * Draw mouse.
+	 *
+	 * @param g2 the Graphics2D object we have to speak to
+	 */
+	private void drawMouse (Graphics2D g2)
+	{
+		String text;
+		Rectangle2D rect;
+		Font f = new Font ("SansSerif", Font.PLAIN, 10);
+		g2.setFont (f);
+		FontMetrics fm = g2.getFontMetrics (f);
+		
+		g2.setColor (java.awt.Color.LIGHT_GRAY);
+		if (drawMouse && mouse != null)
+		{
+			g2.drawLine (mouse.x, mouse.y - 10, mouse.x, mouse.y + 10);
+			g2.drawLine (mouse.x - 10, mouse.y, mouse.x + 10, mouse.y);
+			if (mouse.x >= startX && mouse.x <= endX && mouse.y >= endY
+					&& mouse.y <= startY)
+			{
+				double maxMass = this.maxMass.peek ();
+				double minMass = this.minMass.peek ();
+				double mass = ( ((double) (mouse.x - startX) / (double) (endX - startX)))
+						* (maxMass - minMass) + minMass;
+				double intens = ((double) (mouse.y - startY))
+						/ (double) (endY - startY);
+				text = "" + Math.round (mass * 100.) / 100.;
+				rect = fm.getStringBounds (text, g2);
+				g2.drawString (text, mouse.x + 3, mouse.y - 3);
+				g2.drawString ("" + Math.round (intens * 10000.) / 100. + " %",
+						mouse.x + 3, mouse.y - 3 - (int) rect.getHeight ());
+				g2.drawLine (mouse.x, (int) startY, mouse.x, (int) startY + 6);
+				g2.drawLine ((int) originX, mouse.y, (int) originX - 6, mouse.y);
+			}
+			if (initMouse != null)
+			{
+				double maxMass = Math.ceil ( (this.maxMass.peek () + 2) / 3.) * 3.;
+				double minMass = Math.floor ( (this.minMass.peek () - 2) / 3.) * 3.;
+				g2.drawLine (mouse.x, initMouse.y, initMouse.x, initMouse.y);
+				double mass = ( ((double) (initMouse.x - startX) / (double) (endX - startX)))
+						* (maxMass - minMass) + minMass;
+				double intens = ((double) (initMouse.y - startY))
+						/ (double) (endY - startY);
+				if (mouse.x >= initMouse.x)
+				{
+					text = "" + Math.round (mass * 100.) / 100.;
+					rect = fm.getStringBounds (text, g2);
+					g2.drawString (text, initMouse.x + 3, initMouse.y + 3
+							+ (int) rect.getHeight ());
+					text = "" + Math.round (intens * 10000.) / 100. + " %";
+					rect = fm.getStringBounds (text, g2);
+					g2.drawString (text, initMouse.x + 3, initMouse.y - 3);
+				}
+				else
+				{
+					text = "" + Math.round (mass * 100.) / 100.;
+					rect = fm.getStringBounds (text, g2);
+					g2.drawString (text, initMouse.x - 3 - (int) rect.getWidth (),
+							initMouse.y + 3 + (int) rect.getHeight ());
+					text = "" + Math.round (intens * 10000.) / 100. + " %";
+					rect = fm.getStringBounds (text, g2);
+					g2.drawString (text, initMouse.x - 3 - (int) rect.getWidth (),
+							initMouse.y - 3);
+				}
+				
+				g2.drawLine (mouse.x, (int) startY + 6, mouse.x, (int) endY);
+				g2.drawLine (initMouse.x, (int) startY + 6, initMouse.x, (int) endY);
+			}
 		}
 	}
 	
@@ -244,7 +391,6 @@ public class PeakViewer
 	 */
 	private void drawPeaks (Graphics2D g2)
 	{
-		// TODO: zoom
 		// TODO: more labels at bottom
 		this.setBackground (Color.WHITE);
 		g2.setColor (Color.WHITE);
@@ -252,14 +398,14 @@ public class PeakViewer
 		String text;
 		Rectangle2D rect;
 		
-		double originX = 50;
-		double originY = getHeight () - 50;
-		double maxX = getWidth () - 20;
-		double maxY = 20;
-		double startX = originX + 10;
-		double startY = originY;
-		double endX = maxX - 10;
-		double endY = maxY + 10;
+		originX = 50;
+		originY = getHeight () - 50;
+		maxX = getWidth () - 20;
+		maxY = 20;
+		startX = originX + 10;
+		startY = originY;
+		endX = maxX - 10;
+		endY = maxY + 10;
 		
 		g2.setColor (new Color (250, 250, 250));
 		g2.fillRect ((int) originX, (int) endY, (int) (maxX - originX),
@@ -271,9 +417,20 @@ public class PeakViewer
 		g2.drawLine ((int) originX, (int) originY, (int) maxX, (int) originY);
 		
 		double maxAbundance = 1;
-		double maxMass = Math.ceil ( (this.maxMass + 2) / 3.) * 3.;
-		double minMass = Math.floor ( (this.minMass - 2) / 3.) * 3.;
+		double maxMass = this.maxMass.peek ();
+		double minMass = this.minMass.peek ();
 		int px = 0;
+		double round = maxMass - minMass;
+		if (round > 100)
+			round = 1;
+		else if (round > 10)
+			round = 10;
+		else if (round > 1)
+			round = 100;
+		else if (round > .1)
+			round = 10000;
+		else
+			round = 100000;
 		
 		Font f = new Font ("SansSerif", Font.PLAIN, 10);
 		g2.setFont (f);
@@ -306,33 +463,33 @@ public class PeakViewer
 		g2.drawString (text, (int) (originX - 10 - rect.getWidth ()), (int) (endY
 				+ (startY - endY) * 3. / 4. + rect.getHeight () / 2.));
 		
-		text = "" + maxMass;
+		text = "" + Math.round (maxMass * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		g2.drawLine ((int) endX, (int) originY, (int) endX, (int) originY + 5);
 		g2.drawString (text, (int) (endX - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + minMass;
+		text = "" + Math.round (minMass * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		g2.drawLine ((int) startX, (int) originY, (int) startX, (int) originY + 5);
 		g2.drawString (text, (int) (startX - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + (minMass + (maxMass - minMass) * 3. / 4.);
+		text = "" + Math.round ((minMass + (maxMass - minMass) * 3. / 4.) * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) * 3. / 4. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
 		g2.drawString (text, (int) (px - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + (minMass + maxMass) / 2.;
+		text = "" + Math.round (((minMass + maxMass) / 2.) * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) / 2. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
 		g2.drawString (text, (int) (px - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + (minMass + (maxMass - minMass) / 4.);
+		text = "" + Math.round ((minMass + (maxMass - minMass) / 4.) * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) / 4. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
@@ -354,29 +511,50 @@ public class PeakViewer
 		{
 			if (msModeVals == null)
 				calcMsMode ((int) (endX - startX), minMass, maxMass);
+			double max = 0;
+			if (stretch) for (int i = 1; i < msModeVals.length; i++)
+			{
+				if (msModeVals[i] > max)
+					max = msModeVals[i];
+			}
+			else max = 1;
+			
 			for (int i = 1; i < msModeVals.length; i++)
 			{
 				g2.drawLine (i - 1 + (int) startX, (int) (startY + (endY - startY)
 						* msModeVals[i - 1]), i + (int) startX,
-						(int) (startY + (endY - startY) * msModeVals[i]));
+						(int) (startY + (endY - startY) * msModeVals[i] / max));
 			}
 		}
 		else
+		{
+			double max = 0;
+			if (stretch) 
+			for (int i = 0; i < peaks.size (); i++)
+			{
+				if (peaks.elementAt (i).mass < minMass
+						|| peaks.elementAt (i).mass > maxMass)
+					continue;
+				if (peaks.elementAt (i).abundance > max)
+					max = peaks.elementAt (i).abundance;
+			}
+			else max = 1;
 			for (int i = 0; i < peaks.size (); i++)
 			{
 				Isotope p = peaks.elementAt (i);
 				double x = startX
 						+ ( ( (p.mass - minMass) / (maxMass - minMass)) * (endX - startX));
 				g2.drawLine ((int) x, (int) originY, (int) x,
-						(int) (startY + (endY - startY) * p.abundance));
+						(int) (startY + (endY - startY) * p.abundance / max));
 			}
+		}
 	}
 	
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see javax.swing.JComponent#paint(java.awt.Graphics)
+	 * @see javax.swing.JComponent#paint (java.awt.Graphics)
 	 */
 	public void paint (Graphics g)
 	{
@@ -391,6 +569,24 @@ public class PeakViewer
 			drawAbout (g2);
 		else
 			drawPeaks (g2);
+		drawMouse (g2);
+	}
+	
+
+	/**
+	 * Full unzoom.
+	 */
+	public void fullUnzoom ()
+	{
+		if (minMass == null)
+			return;
+		while (minMass.size () > 1)
+		{
+			msModeVals = null;
+			minMass.pop ();
+			maxMass.pop ();
+		}
+		repaint ();
 	}
 	
 
@@ -398,9 +594,8 @@ public class PeakViewer
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * 
-	 * java.awt.event.ComponentListener#componentResized(java.awt.event.ComponentEvent
-	 * )
+	 * java.awt.event.ComponentListener#componentResized
+	 * (java.awt.event.ComponentEvent)
 	 */
 	@Override
 	public void componentResized (ComponentEvent e)
@@ -420,7 +615,6 @@ public class PeakViewer
 	
 
 	/*
-	 * 
 	 * following: unnecessary stuff, but we have to implement it...
 	 */
 
@@ -428,9 +622,8 @@ public class PeakViewer
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * 
-	 * java.awt.event.ComponentListener#componentShown(java.awt.event.ComponentEvent
-	 * )
+	 * java.awt.event.ComponentListener#componentShown
+	 * (java.awt.event.ComponentEvent)
 	 */
 	@Override
 	public void componentShown (ComponentEvent e)
@@ -442,9 +635,8 @@ public class PeakViewer
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * 
-	 * java.awt.event.ComponentListener#componentHidden(java.awt.event.ComponentEvent
-	 * )
+	 * java.awt.event.ComponentListener#componentHidden
+	 * (java.awt.event.ComponentEvent)
 	 */
 	@Override
 	public void componentHidden (ComponentEvent e)
@@ -456,12 +648,142 @@ public class PeakViewer
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * 
-	 * java.awt.event.ComponentListener#componentMoved(java.awt.event.ComponentEvent
-	 * )
+	 * java.awt.event.ComponentListener#componentMoved
+	 * (java.awt.event.ComponentEvent)
 	 */
 	@Override
 	public void componentMoved (ComponentEvent e)
 	{
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseListener#mouseClicked (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseClicked (MouseEvent e)
+	{
+		if (e.getClickCount () == 2
+				&& e.getModifiers () == java.awt.event.InputEvent.BUTTON1_MASK)
+		{
+			if (minMass.size () > 1)
+			{
+				msModeVals = null;
+				minMass.pop ();
+				maxMass.pop ();
+			}
+			repaint ();
+			return;
+		}
+		if (e.getModifiers () == java.awt.event.InputEvent.BUTTON3_MASK)
+		{
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu ();
+			javax.swing.JMenuItem item = new javax.swing.JMenuItem ("Full unzoom");
+			item.addActionListener (new java.awt.event.ActionListener ()
+			{
+				
+				public void actionPerformed (java.awt.event.ActionEvent e)
+				{
+					fullUnzoom ();
+				}
+			});
+			menu.add (item);
+			menu.show (this, e.getX (), e.getY ());
+		}
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseListener#mouseEntered (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseEntered (MouseEvent e)
+	{
+		setCursor (cursor);
+		drawMouse = true;
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseListener#mouseExited (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseExited (MouseEvent e)
+	{
+		setCursor (new java.awt.Cursor (java.awt.Cursor.DEFAULT_CURSOR));
+		drawMouse = false;
+		initMouse = null;
+		repaint ();
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseListener#mousePressed (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mousePressed (MouseEvent e)
+	{
+		if (peaks != null && initMouse == null && mouse != null)
+		{
+			initMouse = getMousePosition ();
+		}
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseListener#mouseReleased (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseReleased (MouseEvent e)
+	{
+		
+		if (mousemoved && initMouse != null && mouse != null
+				&& e.getModifiers () == java.awt.event.InputEvent.BUTTON3_MASK)
+		{
+			msModeVals = null;
+			double maxMass = this.maxMass.peek ();
+			double minMass = this.minMass.peek ();
+			double min = ( ((double) (initMouse.x - startX) / (double) (endX - startX)))
+					* (maxMass - minMass) + minMass;
+			double max = ( ((double) (mouse.x - startX) / (double) (endX - startX)))
+					* (maxMass - minMass) + minMass;
+			if (min > max)
+			{
+				double tmp = max;
+				max = min;
+				min = tmp;
+			}
+			this.minMass.push (min);
+			this.maxMass.push (max);
+			mousemoved = false;
+			repaint ();
+		}
+		initMouse = null;
+		
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseMotionListener#mouseDragged (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseDragged (MouseEvent e)
+	{
+		mousemoved = true;
+		drawMouse = true;
+		mouse = getMousePosition ();
+		repaint ();
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.MouseMotionListener#mouseMoved (java.awt.event.MouseEvent)
+	 */
+	@Override
+	public void mouseMoved (MouseEvent e)
+	{
+		drawMouse = true;
+		mouse = getMousePosition ();
+		repaint ();
 	}
 }

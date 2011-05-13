@@ -273,7 +273,7 @@ public class IsoGUI
 			
 			jPanelGraph.setMsMode (jCheckBoxMS.isSelected ());
 			
-			jPanelGraph.drawPeaks (presentingPeaks);
+			jPanelGraph.drawPeaks (presentingPeaks, jCheckBoxStretcher.isSelected ());
 		}
 	}
 	
