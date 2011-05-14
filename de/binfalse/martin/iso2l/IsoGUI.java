@@ -62,6 +62,9 @@ public class IsoGUI
 	/** The min abundance. */
 	private double									minAbundance;
 	
+	/** The version. */
+	private final String						version						= "3.0";
+	
 	
 	/**
 	 * Instantiates a new iso GUI.
@@ -224,7 +227,7 @@ public class IsoGUI
 		jPanelGraph.drawAbout ();
 		jTableIsos.setModel (new javax.swing.table.DefaultTableModel (
 				new Object[][] {}, new String[] { "Mass", "Abundance" }));
-		changeStatus ();
+		changeStatus ("<font color='#4169E1'>iso2l - version " + version + "</font>");
 	}
 	
 
@@ -538,7 +541,8 @@ public class IsoGUI
 				new String[] { "Try to detect", "Chemical formular",
 						"1-Letter Amino Acids", "3-Letter Amino Acids" }));
 		
-		jTextFieldForm.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTextFieldForm.setFont (new java.awt.Font ("Monospaced",
+				java.awt.Font.PLAIN, 12));
 		
 		jButtonCalc.setText ("calc");
 		jButtonCalc.addActionListener (new java.awt.event.ActionListener ()
@@ -647,7 +651,8 @@ public class IsoGUI
 		jTableIsos.setModel (new javax.swing.table.DefaultTableModel (
 				new Object[][] {}, new String[] { "Mass", "Abundance" }));
 		jTableIsos.setAutoCreateRowSorter (true);
-		jTableIsos.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTableIsos.setFont (new java.awt.Font ("Monospaced", java.awt.Font.PLAIN,
+				12));
 		jTableIsos.setEnabled (false);
 		jScrollPaneTableIsos.setViewportView (jTableIsos);
 		
@@ -718,9 +723,12 @@ public class IsoGUI
 		jTextFieldRoundAbun.getDocument ().addDocumentListener (docl);
 		jTextFieldResolution.addKeyListener (this);
 		jTextFieldResolution.getDocument ().addDocumentListener (docl);
-		jTextFieldResolution.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-		jTextFieldRoundMass.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-		jTextFieldRoundAbun.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTextFieldResolution.setFont (new java.awt.Font ("Monospaced",
+				java.awt.Font.PLAIN, 12));
+		jTextFieldRoundMass.setFont (new java.awt.Font ("Monospaced",
+				java.awt.Font.PLAIN, 12));
+		jTextFieldRoundAbun.setFont (new java.awt.Font ("Monospaced",
+				java.awt.Font.PLAIN, 12));
 		
 		jLabelStatus.setText ("Status:");
 		changeStatus ();
@@ -1123,7 +1131,9 @@ public class IsoGUI
 	private PeakViewer							jPanelGraph;
 	
 	
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
 	 */
 	@Override
@@ -1132,7 +1142,9 @@ public class IsoGUI
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
 	 */
 	@Override
@@ -1147,7 +1159,9 @@ public class IsoGUI
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
 	 */
 	@Override

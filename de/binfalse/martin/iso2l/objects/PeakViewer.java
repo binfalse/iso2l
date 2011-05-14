@@ -251,7 +251,7 @@ public class PeakViewer
 		
 		String text = "";
 		
-		g2.setColor (Color.BLUE);
+		g2.setColor (new Color (41, 69, 225));
 		text = "iso2l";
 		Rectangle2D rect = fm.getStringBounds (text, g2);
 		int right = (int) (rect.getWidth () + 100);
