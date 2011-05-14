@@ -1,14 +1,23 @@
+/*
+ * iso2l - calculate the theoretical isotopic distribution of a compound
+ * Copyright (C) 2011 Martin Scharm
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.binfalse.martin.iso2l;
 
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.text.NumberFormat;
 import java.util.Vector;
-
-import javax.swing.JFileChooser;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
 
 import de.binfalse.martin.iso2l.objects.Isotope;
 import de.binfalse.martin.iso2l.objects.Link;
@@ -19,6 +28,8 @@ import de.binfalse.martin.iso2l.objects.PeakViewer;
 /**
  * The Class IsoGUI.
  * 
+ * Creates the GUI for user interaction.
+ * 
  * TODO: charge states
  * TODO: MS mode table
  * 
@@ -27,28 +38,29 @@ import de.binfalse.martin.iso2l.objects.PeakViewer;
  */
 public class IsoGUI
 		extends javax.swing.JFrame
+		implements java.awt.event.KeyListener
 {
 	
 	/** The Constant serialVersionUID. */
-	private static final long	serialVersionUID	= 1L;
+	private static final long				serialVersionUID	= 1L;
 	
 	/** The operator. */
-	private Operator					op;
+	private Operator								op;
 	
 	/** num form. */
-	private NumberFormat			numForm;
+	private java.text.NumberFormat	numForm;
 	
 	/** The vec of peaks. */
-	private Vector<Isotope>		peaks;
+	private Vector<Isotope>					peaks;
 	
 	/**
 	 * The vec of peaks to present, we'll change this object without loosing
 	 * information about the real values...
 	 */
-	private Vector<Isotope>		presentingPeaks;
+	private Vector<Isotope>					presentingPeaks;
 	
 	/** The min abundance. */
-	private double						minAbundance;
+	private double									minAbundance;
 	
 	
 	/**
@@ -59,7 +71,7 @@ public class IsoGUI
 		op = new Operator ();
 		minAbundance = Operator.minAbundance;
 		init ();
-		numForm = NumberFormat.getInstance ();
+		numForm = java.text.NumberFormat.getInstance ();
 		numForm.setGroupingUsed (false);
 		numForm.setMaximumFractionDigits (20);
 	}
@@ -92,20 +104,20 @@ public class IsoGUI
 	private void saveImage ()
 	{
 		// maybe add JPG or GIF or smth else..
-		JFileChooser fc = new JFileChooser (".");
+		javax.swing.JFileChooser fc = new javax.swing.JFileChooser (".");
 		String name = jTextFieldForm.getText ();
 		if (jTextFieldDispName.getText ().length () > 0)
 			name = jTextFieldDispName.getText () + "-" + name;
 		if (name.length () < 1)
 			name = "iso2l";
-		fc.setSelectedFile (new File (name
+		fc.setSelectedFile (new java.io.File (name
 				+ "_"
 				+ new java.text.SimpleDateFormat ("yyyy-MM-dd_HH-mm")
 						.format (new java.util.Date ()) + ".png"));
 		fc.setFileFilter (new javax.swing.filechooser.FileFilter ()
 		{
 			
-			public boolean accept (File f)
+			public boolean accept (java.io.File f)
 			{
 				return f.getName ().toLowerCase ().endsWith (".png")
 						|| f.isDirectory ();
@@ -119,12 +131,13 @@ public class IsoGUI
 		});
 		changeStatus ("choose a file!");
 		int returnVal = fc.showSaveDialog (this);
-		if (returnVal == JFileChooser.APPROVE_OPTION)
+		if (returnVal == javax.swing.JFileChooser.APPROVE_OPTION)
 		{
 			changeStatus ("Saving...");
-			File imageFile = fc.getSelectedFile ();
-			BufferedImage bufImage = new BufferedImage (jPanelGraph.getSize ().width,
-					jPanelGraph.getSize ().height, BufferedImage.TYPE_INT_RGB);
+			java.io.File imageFile = fc.getSelectedFile ();
+			java.awt.image.BufferedImage bufImage = new java.awt.image.BufferedImage (
+					jPanelGraph.getSize ().width, jPanelGraph.getSize ().height,
+					java.awt.image.BufferedImage.TYPE_INT_RGB);
 			jPanelGraph.paint (bufImage.createGraphics ());
 			try
 			{
@@ -474,7 +487,7 @@ public class IsoGUI
 	
 
 	/**
-	 * init the window.
+	 * init the window, more or less boring
 	 */
 	private void init ()
 	{
@@ -506,7 +519,7 @@ public class IsoGUI
 		jTextFieldResolution = new javax.swing.JTextField ();
 		
 		jTextFieldResolution.setText ("8000");
-		jTextFieldResolution.setHorizontalAlignment (JTextField.RIGHT);
+		jTextFieldResolution.setHorizontalAlignment (javax.swing.JTextField.RIGHT);
 		jTextFieldResolution.setToolTipText ("Resolution as FWHM");
 		jCheckBoxMS.setToolTipText ("Enable Mass-Spec mode");
 		jCheckBoxMS.setText ("MS mode, resolution:");
@@ -525,14 +538,7 @@ public class IsoGUI
 				new String[] { "Try to detect", "Chemical formular",
 						"1-Letter Amino Acids", "3-Letter Amino Acids" }));
 		
-		jTextFieldForm.addActionListener (new java.awt.event.ActionListener ()
-		{
-			
-			public void actionPerformed (java.awt.event.ActionEvent e)
-			{
-				calc ();
-			}
-		});
+		jTextFieldForm.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
 		
 		jButtonCalc.setText ("calc");
 		jButtonCalc.addActionListener (new java.awt.event.ActionListener ()
@@ -559,28 +565,28 @@ public class IsoGUI
 		jLabelMinAbu.addMouseListener (new java.awt.event.MouseListener ()
 		{
 			
-			public void mouseClicked (MouseEvent arg0)
+			public void mouseClicked (java.awt.event.MouseEvent e)
 			{
 				setMinAbundance ();
 			}
 			
 
-			public void mouseEntered (MouseEvent arg0)
+			public void mouseEntered (java.awt.event.MouseEvent e)
 			{
 			}
 			
 
-			public void mouseExited (MouseEvent arg0)
+			public void mouseExited (java.awt.event.MouseEvent e)
 			{
 			}
 			
 
-			public void mousePressed (MouseEvent arg0)
+			public void mousePressed (java.awt.event.MouseEvent e)
 			{
 			}
 			
 
-			public void mouseReleased (MouseEvent arg0)
+			public void mouseReleased (java.awt.event.MouseEvent e)
 			{
 			}
 		});
@@ -616,30 +622,33 @@ public class IsoGUI
 				new javax.swing.event.DocumentListener ()
 				{
 					
-					public void changedUpdate (DocumentEvent arg0)
+					public void changedUpdate (javax.swing.event.DocumentEvent e)
 					{
 						jCheckBoxDispName.setSelected (true);
 						drawImage ();
 					}
 					
 
-					public void insertUpdate (DocumentEvent arg0)
+					public void insertUpdate (javax.swing.event.DocumentEvent e)
 					{
 						jCheckBoxDispName.setSelected (true);
 						drawImage ();
 					}
 					
 
-					public void removeUpdate (DocumentEvent arg0)
+					public void removeUpdate (javax.swing.event.DocumentEvent e)
 					{
 						jCheckBoxDispName.setSelected (true);
 						drawImage ();
 					}
 				});
+		jTextFieldDispName.addKeyListener (this);
 		
 		jTableIsos.setModel (new javax.swing.table.DefaultTableModel (
 				new Object[][] {}, new String[] { "Mass", "Abundance" }));
 		jTableIsos.setAutoCreateRowSorter (true);
+		jTableIsos.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTableIsos.setEnabled (false);
 		jScrollPaneTableIsos.setViewportView (jTableIsos);
 		
 		jButtonCopy.setText ("copy table");
@@ -679,19 +688,19 @@ public class IsoGUI
 		javax.swing.event.DocumentListener docl = new javax.swing.event.DocumentListener ()
 		{
 			
-			public void changedUpdate (DocumentEvent arg0)
+			public void changedUpdate (javax.swing.event.DocumentEvent e)
 			{
 				postProcess ();
 			}
 			
 
-			public void insertUpdate (DocumentEvent arg0)
+			public void insertUpdate (javax.swing.event.DocumentEvent e)
 			{
 				postProcess ();
 			}
 			
 
-			public void removeUpdate (DocumentEvent arg0)
+			public void removeUpdate (javax.swing.event.DocumentEvent e)
 			{
 				postProcess ();
 			}
@@ -700,15 +709,45 @@ public class IsoGUI
 		jLabelRoundMass.setText ("Round mass:");
 		jLabelRoundAbun.setText ("Round abun.:");
 		jTextFieldRoundMass.setText ("10000000");
-		jTextFieldRoundAbun.setText ("10000000");
-		jTextFieldRoundMass.setHorizontalAlignment (JTextField.RIGHT);
-		jTextFieldRoundAbun.setHorizontalAlignment (JTextField.RIGHT);
-		jTextFieldRoundAbun.getDocument ().addDocumentListener (docl);
+		jTextFieldRoundMass.addKeyListener (this);
+		jTextFieldRoundMass.setHorizontalAlignment (javax.swing.JTextField.RIGHT);
 		jTextFieldRoundMass.getDocument ().addDocumentListener (docl);
+		jTextFieldRoundAbun.setText ("10000000");
+		jTextFieldRoundAbun.addKeyListener (this);
+		jTextFieldRoundAbun.setHorizontalAlignment (javax.swing.JTextField.RIGHT);
+		jTextFieldRoundAbun.getDocument ().addDocumentListener (docl);
+		jTextFieldResolution.addKeyListener (this);
 		jTextFieldResolution.getDocument ().addDocumentListener (docl);
+		jTextFieldResolution.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTextFieldRoundMass.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+		jTextFieldRoundAbun.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
 		
 		jLabelStatus.setText ("Status:");
 		changeStatus ();
+		
+		jComboBoxTypeChooser.addKeyListener (this);
+		jTextFieldForm.addKeyListener (this);
+		jButtonCalc.addKeyListener (this);
+		jButtonInfo.addKeyListener (this);
+		jLabelMinAbu.addKeyListener (this);
+		jCheckBoxStretcher.addKeyListener (this);
+		jCheckBoxDispName.addKeyListener (this);
+		jLabelDispName.addKeyListener (this);
+		jTextFieldDispName.addKeyListener (this);
+		jScrollPaneTableIsos.addKeyListener (this);
+		jTableIsos.addKeyListener (this);
+		jButtonCopy.addKeyListener (this);
+		jButtonSave.addKeyListener (this);
+		jLabelLink.addKeyListener (this);
+		jPanelGraph.addKeyListener (this);
+		jLabelRoundMass.addKeyListener (this);
+		jLabelRoundAbun.addKeyListener (this);
+		jTextFieldRoundMass.addKeyListener (this);
+		jTextFieldRoundAbun.addKeyListener (this);
+		jSeparatorStatus.addKeyListener (this);
+		jLabelStatus.addKeyListener (this);
+		jCheckBoxMS.addKeyListener (this);
+		jTextFieldResolution.addKeyListener (this);
 		
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout (
 				getContentPane ());
@@ -757,7 +796,7 @@ public class IsoGUI
 																												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 																										.addComponent (
 																												jTextFieldResolution,
-																												20, 40, 40))
+																												20, 50, 50))
 																						.addGroup (
 																								layout
 																										.createSequentialGroup ()
@@ -967,6 +1006,7 @@ public class IsoGUI
 										.addComponent (jLabelStatus).addContainerGap (10, 10)));
 		
 		pack ();
+		jTextFieldForm.requestFocus ();
 	}
 	
 	/**
@@ -978,7 +1018,7 @@ public class IsoGUI
 			extends Exception
 	{
 		
-		/** ext stuff */
+		/** ext stuff. */
 		private static final long	serialVersionUID	= 1339810279736153946L;
 		
 		
@@ -1013,27 +1053,105 @@ public class IsoGUI
 		});
 	}
 	
+	/** button calc. */
 	private javax.swing.JButton			jButtonCalc;
+	
+	/** button copy. */
 	private javax.swing.JButton			jButtonCopy;
+	
+	/** button info. */
 	private javax.swing.JButton			jButtonInfo;
+	
+	/** button save. */
 	private javax.swing.JButton			jButtonSave;
+	
+	/** check box display name. */
 	private javax.swing.JCheckBox		jCheckBoxDispName;
+	
+	/** check box ms mode. */
 	private javax.swing.JCheckBox		jCheckBoxMS;
+	
+	/** check box for stretching. */
 	private javax.swing.JCheckBox		jCheckBoxStretcher;
+	
+	/** combo box type chooser. */
 	private javax.swing.JComboBox		jComboBoxTypeChooser;
+	
+	/** label disp name. */
 	private javax.swing.JLabel			jLabelDispName;
+	
+	/** label for min abu. */
 	private javax.swing.JLabel			jLabelMinAbu;
+	
+	/** label for round mass. */
 	private javax.swing.JLabel			jLabelRoundMass;
+	
+	/** label for round abun. */
 	private javax.swing.JLabel			jLabelRoundAbun;
+	
+	/** label for status. */
 	private javax.swing.JLabel			jLabelStatus;
+	
+	/** scroll pane for table. */
 	private javax.swing.JScrollPane	jScrollPaneTableIsos;
+	
+	/** separator above status. */
 	private javax.swing.JSeparator	jSeparatorStatus;
+	
+	/** table of isotopes. */
 	private javax.swing.JTable			jTableIsos;
+	
+	/** text field to display a name. */
 	private javax.swing.JTextField	jTextFieldDispName;
+	
+	/** text field formula. */
 	private javax.swing.JTextField	jTextFieldForm;
+	
+	/** text field for resolution. */
 	private javax.swing.JTextField	jTextFieldResolution;
+	
+	/** text field to round mass. */
 	private javax.swing.JTextField	jTextFieldRoundMass;
+	
+	/** text field to round abun. */
 	private javax.swing.JTextField	jTextFieldRoundAbun;
+	
+	/** link. */
 	private Link										jLabelLink;
+	
+	/** graph. */
 	private PeakViewer							jPanelGraph;
+	
+	
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
+	 */
+	@Override
+	public void keyPressed (java.awt.event.KeyEvent e)
+	{
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
+	 */
+	@Override
+	public void keyReleased (java.awt.event.KeyEvent e)
+	{
+		if (e.getKeyCode () == java.awt.event.KeyEvent.VK_ENTER)
+			calc ();
+		if (e.isControlDown () && e.getKeyCode () == java.awt.event.KeyEvent.VK_S)
+			saveImage ();
+		if (e.isControlDown () && e.getKeyCode () == java.awt.event.KeyEvent.VK_C)
+			copyTable ();
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
+	 */
+	@Override
+	public void keyTyped (java.awt.event.KeyEvent e)
+	{
+	}
 }

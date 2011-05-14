@@ -1,3 +1,20 @@
+/*
+ * iso2l - calculate the theoretical isotopic distribution of a compound
+ * Copyright (C) 2011 Martin Scharm
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.binfalse.martin.iso2l.objects;
 
 import java.awt.Color;
@@ -9,13 +26,10 @@ import java.awt.RenderingHints;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
-import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.Vector;
 
 
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class PeakViewer.
  * 
@@ -73,27 +87,26 @@ public class PeakViewer
 	/** The origin y. */
 	private double									originY;
 	
-	/** The max x. */
+	/** max x value. */
 	private double									maxX;
 	
-	/** The max y. */
+	/** max y value. */
 	private double									maxY;
 	
-	/** The start x. */
+	/** start x coord. */
 	private double									startX;
 	
-	/** The start y. */
+	/** start y coord. */
 	private double									startY;
 	
-	/** The end x. */
+	/** end x coord. */
 	private double									endX;
 	
-	/** The end y. */
+	/** end y coord. */
 	private double									endY;
-	private boolean stretch;
 	
-	/** num form. */
-	//private NumberFormat			numForm;
+	/** stretch the peaks. */
+	private boolean									stretch;
 	
 	
 	/**
@@ -178,6 +191,10 @@ public class PeakViewer
 		this.setBackground (Color.WHITE);
 		peaks = null;
 		this.repaint ();
+		mousemoved = false;
+		initMouse = null;
+		minMass = null;
+		maxMass = null;
 	}
 	
 
@@ -186,6 +203,8 @@ public class PeakViewer
 	 * 
 	 * @param peaks
 	 *          the vector of peaks we should draw later on
+	 * @param stretch
+	 *          the stretch
 	 */
 	public void drawPeaks (Vector<Isotope> peaks, boolean stretch)
 	{
@@ -302,7 +321,6 @@ public class PeakViewer
 					max = msModeVals[(int) x];
 			}
 		}
-		System.out.println (Arrays.toString (msModeVals));
 		for (int x = 0; x < length; x++)
 		{
 			msModeVals[(int) x] /= max;
@@ -312,8 +330,9 @@ public class PeakViewer
 
 	/**
 	 * Draw mouse.
-	 *
-	 * @param g2 the Graphics2D object we have to speak to
+	 * 
+	 * @param g2
+	 *          the Graphics2D object we have to speak to
 	 */
 	private void drawMouse (Graphics2D g2)
 	{
@@ -391,7 +410,6 @@ public class PeakViewer
 	 */
 	private void drawPeaks (Graphics2D g2)
 	{
-		// TODO: more labels at bottom
 		this.setBackground (Color.WHITE);
 		g2.setColor (Color.WHITE);
 		g2.fillRect (getX (), getY (), WIDTH, HEIGHT);
@@ -475,21 +493,23 @@ public class PeakViewer
 		g2.drawString (text, (int) (startX - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + Math.round ((minMass + (maxMass - minMass) * 3. / 4.) * round) / round;
+		text = "" + Math.round ( (minMass + (maxMass - minMass) * 3. / 4.) * round)
+				/ round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) * 3. / 4. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
 		g2.drawString (text, (int) (px - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + Math.round (((minMass + maxMass) / 2.) * round) / round;
+		text = "" + Math.round ( ( (minMass + maxMass) / 2.) * round) / round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) / 2. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
 		g2.drawString (text, (int) (px - rect.getWidth () / 2.),
 				(int) (originY + 10 + rect.getHeight ()));
 		
-		text = "" + Math.round ((minMass + (maxMass - minMass) / 4.) * round) / round;
+		text = "" + Math.round ( (minMass + (maxMass - minMass) / 4.) * round)
+				/ round;
 		rect = fm.getStringBounds (text, g2);
 		px = (int) ( (endX - startX) / 4. + startX);
 		g2.drawLine (px, (int) originY, px, (int) originY + 5);
@@ -512,12 +532,14 @@ public class PeakViewer
 			if (msModeVals == null)
 				calcMsMode ((int) (endX - startX), minMass, maxMass);
 			double max = 0;
-			if (stretch) for (int i = 1; i < msModeVals.length; i++)
-			{
-				if (msModeVals[i] > max)
-					max = msModeVals[i];
-			}
-			else max = 1;
+			if (stretch)
+				for (int i = 1; i < msModeVals.length; i++)
+				{
+					if (msModeVals[i] > max)
+						max = msModeVals[i];
+				}
+			else
+				max = 1;
 			
 			for (int i = 1; i < msModeVals.length; i++)
 			{
@@ -529,16 +551,17 @@ public class PeakViewer
 		else
 		{
 			double max = 0;
-			if (stretch) 
-			for (int i = 0; i < peaks.size (); i++)
-			{
-				if (peaks.elementAt (i).mass < minMass
-						|| peaks.elementAt (i).mass > maxMass)
-					continue;
-				if (peaks.elementAt (i).abundance > max)
-					max = peaks.elementAt (i).abundance;
-			}
-			else max = 1;
+			if (stretch)
+				for (int i = 0; i < peaks.size (); i++)
+				{
+					if (peaks.elementAt (i).mass < minMass
+							|| peaks.elementAt (i).mass > maxMass)
+						continue;
+					if (peaks.elementAt (i).abundance > max)
+						max = peaks.elementAt (i).abundance;
+				}
+			else
+				max = 1;
 			for (int i = 0; i < peaks.size (); i++)
 			{
 				Isotope p = peaks.elementAt (i);
@@ -564,7 +587,8 @@ public class PeakViewer
 				RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g2.setRenderingHint (RenderingHints.KEY_RENDERING,
 				RenderingHints.VALUE_RENDER_QUALITY);
-		
+		g2.setRenderingHint (RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
 		if (peaks == null)
 			drawAbout (g2);
 		else
@@ -657,13 +681,15 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.MouseListener#mouseClicked (java.awt.event.MouseEvent)
 	 */
 	@Override
 	public void mouseClicked (MouseEvent e)
 	{
-		if (e.getClickCount () == 2
+		if (peaks != null && e.getClickCount () == 2
 				&& e.getModifiers () == java.awt.event.InputEvent.BUTTON1_MASK)
 		{
 			if (minMass.size () > 1)
@@ -675,7 +701,8 @@ public class PeakViewer
 			repaint ();
 			return;
 		}
-		if (e.getModifiers () == java.awt.event.InputEvent.BUTTON3_MASK)
+		if (peaks != null
+				&& e.getModifiers () == java.awt.event.InputEvent.BUTTON3_MASK)
 		{
 			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu ();
 			javax.swing.JMenuItem item = new javax.swing.JMenuItem ("Full unzoom");
@@ -693,7 +720,9 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.MouseListener#mouseEntered (java.awt.event.MouseEvent)
 	 */
 	@Override
@@ -704,7 +733,9 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.MouseListener#mouseExited (java.awt.event.MouseEvent)
 	 */
 	@Override
@@ -717,7 +748,9 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.MouseListener#mousePressed (java.awt.event.MouseEvent)
 	 */
 	@Override
@@ -730,7 +763,9 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.awt.event.MouseListener#mouseReleased (java.awt.event.MouseEvent)
 	 */
 	@Override
@@ -763,8 +798,11 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
-	 * @see java.awt.event.MouseMotionListener#mouseDragged (java.awt.event.MouseEvent)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseMotionListener#mouseDragged
+	 * (java.awt.event.MouseEvent)
 	 */
 	@Override
 	public void mouseDragged (MouseEvent e)
@@ -776,8 +814,11 @@ public class PeakViewer
 	}
 	
 
-	/* (non-Javadoc)
-	 * @see java.awt.event.MouseMotionListener#mouseMoved (java.awt.event.MouseEvent)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.awt.event.MouseMotionListener#mouseMoved
+	 * (java.awt.event.MouseEvent)
 	 */
 	@Override
 	public void mouseMoved (MouseEvent e)

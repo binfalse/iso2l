@@ -1,3 +1,20 @@
+/*
+ * iso2l - calculate the theoretical isotopic distribution of a compound
+ * Copyright (C) 2011 Martin Scharm
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.binfalse.martin.iso2l;
 
 import java.awt.Component;
@@ -38,7 +55,7 @@ public class Operator
 	public AminoAcids									aas;
 	
 	/** The min abundance. */
-	public static double							minAbundance	= 0.000000001;
+	public final static double				minAbundance	= 0.000000001;
 	
 	
 	/**
@@ -54,10 +71,10 @@ public class Operator
 	
 
 	/**
-	 * Parses the formular.
+	 * Parses the formula.
 	 * 
-	 * @param formular
-	 *          the formular
+	 * @param formula
+	 *          the formula
 	 * @param type
 	 *          the type
 	 * @param c
@@ -251,6 +268,8 @@ public class Operator
 		{
 			Atom a = isos.getAtom (entry.getKey ());
 			int anz = entry.getValue ();
+			
+			//System.out.println (a.getSymbol () + " -> " + anz);
 			
 			HashMap<Double, Double> peaks = peaksOfAtom (anz, a);
 			
