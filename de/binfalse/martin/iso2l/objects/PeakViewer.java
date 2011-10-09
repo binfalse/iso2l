@@ -366,8 +366,8 @@ public class PeakViewer
 			}
 			if (initMouse != null)
 			{
-				double maxMass = Math.ceil ( (this.maxMass.peek () + 2) / 3.) * 3.;
-				double minMass = Math.floor ( (this.minMass.peek () - 2) / 3.) * 3.;
+				double maxMass = this.maxMass.peek ();//Math.ceil ( (this.maxMass.peek () + 2) / 3.) * 3.;
+				double minMass = this.minMass.peek ();//Math.floor ( (this.minMass.peek () - 2) / 3.) * 3.;
 				g2.drawLine (mouse.x, initMouse.y, initMouse.x, initMouse.y);
 				double mass = ( ((double) (initMouse.x - startX) / (double) (endX - startX)))
 						* (maxMass - minMass) + minMass;

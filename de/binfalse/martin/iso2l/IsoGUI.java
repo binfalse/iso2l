@@ -63,7 +63,7 @@ public class IsoGUI
 	private double									minAbundance;
 	
 	/** The version. */
-	private final String						version						= "3.0";
+	private final String						version						= "3.0.1";
 	
 	
 	/**
