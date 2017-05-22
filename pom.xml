@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.binfalse</groupId>
-  <artifactId>ProfPres</artifactId>
-  <version>0.0.1</version>
+  <artifactId>iso2l</artifactId>
+  <version>4.0.0</version>
   <packaging>jar</packaging>
 
-  <name>ProfPres</name>
+  <name>iso2l</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -20,11 +20,6 @@
 			<artifactId>junit</artifactId>
 			<version>4.8.1</version>
 			<scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.swinglabs</groupId>
-    	<artifactId>pdf-renderer</artifactId>
-    	<version>1.0.5</version>
     </dependency>
   </dependencies>
 
@@ -62,7 +57,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>de.binfalse.martin.profpres.Main</mainClass>
+							<mainClass>de.binfalse.martin.iso2l.IsoGUI</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
