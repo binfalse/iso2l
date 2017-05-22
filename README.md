@@ -8,9 +8,9 @@ You will find [more information at the project's website](https://binfalse.de/so
 
 ![Screenshot of human mozart gene in MS mode](https://binfalse.de/assets/media/wp-content/uploads/2011/05/iso2l.png)
 
-![C100S10 in MS mode](C100S10-w-MS.png)
+![C100S10 in MS mode](https://binfalse.de/assets/media/wp-content/uploads/2011/05/C100S10-w-MS.png)
 
-![C100S10 in high precision mode](C100S10-wo-MS.png)
+![C100S10 in high precision mode](https://binfalse.de/assets/media/wp-content/uploads/2011/05/C100S10-wo-MS.png)
 
 
 
