@@ -45,11 +45,7 @@ public class Isotopes
 	public Isotopes ()
 	{
 		atoms = new HashMap<String, Atom> ();
-		
-		BufferedReader br = new BufferedReader (new InputStreamReader (
-				new DataInputStream (new BufferedInputStream (getClass ()
-						.getClassLoader ().getResourceAsStream (
-								"de/binfalse/martin/iso2l/data/isotops.raw")))));
+		BufferedReader br = new BufferedReader (new InputStreamReader (Isotopes.class.getResourceAsStream ("/isotops.raw")));
 		try
 		{
 			String s;

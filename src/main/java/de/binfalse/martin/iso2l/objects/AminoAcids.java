@@ -46,10 +46,7 @@ public class AminoAcids
 	public AminoAcids ()
 	{
 		aas = new Vector<AminoAcid> ();
-		BufferedReader br = new BufferedReader (new InputStreamReader (
-				new DataInputStream (new BufferedInputStream (getClass ()
-						.getClassLoader ().getResourceAsStream (
-								"de/binfalse/martin/iso2l/data/aminoacids.raw")))));
+		BufferedReader br = new BufferedReader (new InputStreamReader (Isotopes.class.getResourceAsStream ("/aminoacids.raw")));
 		try
 		{
 			String s;

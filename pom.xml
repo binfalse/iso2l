@@ -38,6 +38,10 @@
 				<targetPath>${project.build.outputDirectory}/res</targetPath>
 				<directory>${basedir}/res</directory>
 			</resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
 		</resources>
 		<plugins>
 			<plugin>
